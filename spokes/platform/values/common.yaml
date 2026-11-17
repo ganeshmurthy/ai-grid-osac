@@ -1,0 +1,38 @@
+# Every spoke.
+skipCrdCheck: true            # render every CR; Argo CD retries until the operator's CRDs exist
+operator:
+  type: rhoai
+  rhoai:
+    olm:
+      source: rhoai-catalog-dev   # created by Policy rhoai-nightly-prereqs
+      channel: stable-3.6
+dependencies:
+  # demo.redhat.com orders pre-install cert-manager with their own OperatorGroup; a second one
+  # stops OLM in that namespace (Gaps 19). A spoke without cert-manager needs `auto` here.
+  certManager: { enabled: false }
+  # RHOAIENG-99507: on the hub, ACM's observability and the chart both install COO. Remote spokes
+  # override this to auto (apps/ai-grid-spokes platform.yaml).
+  clusterObservability: { enabled: false }
+  # Monitoring below collects metrics only, so its traces and logs back ends stay out.
+  tempo: { enabled: false }
+  loki: { enabled: false }
+  # NFD and the GPU operator come from their own app, gpu-<spoke> (spokes/gpu), never from the
+  # platform: `auto` would install them here too once a component needing them is enabled.
+  nfd: { enabled: false }
+  nvidiaGPUOperator: { enabled: false }
+services:
+  # OpenShift AI's metrics, for ACM observability on the hub (apps/observability): the hub's
+  # ScrapeConfig rhai-metrics scrapes the collector's own Prometheus exporter (port 8889), which
+  # Policy rhai-metrics opens to the spoke's ACM metrics collector. The Cluster Observability
+  # Operator comes from the hub's own install on local-cluster, and from this chart on remote spokes.
+  # (A second exporter on 8890 collides with this nightly's own.)
+  monitoring:
+    dsci:
+      managementState: Managed
+      metrics:
+        storage: { size: 20Gi }
+# The grid comes from its own charts (apps/ai-grid-spokes grid-*), not the DSC: the operator OpenShift
+# AI deploys for aiGrid has no enrollment, site name or gateway address settings, so a remote site
+# couldn't join. aiGrid stays unset (no second grid operator or CRDs), and so do the chart's copies.
+grid-enrollment: { enabled: false }
+praxis-gateway: { enabled: false }

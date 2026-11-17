@@ -1,0 +1,21 @@
+# Applied on the hub into each placed spoke's cluster namespace (ApplicationSet ai-grid-submariner):
+# ACM installs Submariner on that spoke, joined to broker default-broker.
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ManagedClusterAddOn
+metadata:
+  name: submariner
+spec:
+  installNamespace: submariner-operator
+---
+apiVersion: submarineraddon.open-cluster-management.io/v1alpha1
+kind: SubmarinerConfig
+metadata:
+  name: submariner
+spec:
+  # Two gateways, active and standby, on the nodes Policy submariner-gateway-nodes labels:
+  # each spoke needs at least two nodes whose only role is worker.
+  gatewayConfig:
+    gateways: 2
+  # The gateways sit behind an AWS NLB for their UDP ports (IPsec NAT-T 4500, NAT discovery 4490),
+  # so clusters reach each other without ACM's cloud-prepare, which needs AWS credentials.
+  loadBalancerEnable: true

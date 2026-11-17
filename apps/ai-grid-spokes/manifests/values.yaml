@@ -1,0 +1,43 @@
+# gitRepo and gitRef select the repo for hub, spoke, and model ApplicationSets.
+# gitRepo and gitRef come from the root ApplicationSet as Helm parameters (bootstrap/00-gitops.sh).
+odhGitopsRef: "e6fe1032cbb35ba4de7e3c053dde425cbe63fffe"         # odh-gitops main, 2026-10-21 (PR 181; DSC aiGrid left unset, see spokes/platform/values/common.yaml)
+gridVersion: 0.2.0             # switch to 0.2.1 once it's tagged and its charts are published
+# The grid gateway image by digest (the v<gridVersion> tag's multi-arch index); bump with gridVersion:
+# skopeo inspect --raw docker://ghcr.io/praxis-proxy/grid-gateway:v<gridVersion> | shasum -a 256
+gridGatewayDigest: sha256:3b6679e885fb9a4ef9fa8b8fb7214de36648e649cbb80722a296b87ea1ce9f42
+gridNs: grid
+gridId: aigrid-demo
+gridNetwork: grid
+modelName: facebook-opt-125m
+# Fixed ClusterIPs (in 172.30.0.0/16) the grid gateways dial, since they refuse in-cluster host names:
+# the model's grid-backend Service (spokes/models) and the provider gateway's (spokes/grid/provider).
+modelBackendIP: 172.30.255.10
+providerIP: 172.30.255.11
+# D8: the hub site's certificate digest, which the gateways pin. It's a fingerprint, not a secret or
+# a host name; it changes on every rebuild: copy it from ConfigMap ai-grid-policies/ai-grid-hub-info.
+hubSiteDigest: "e11b9e876791edb1062b1fe34080ecfbcc75b52e4c8fe2639701fe36088ea5b9"
+# A remote site's own certificate digest, which its provider gateway pins (its consumer presents
+# that site's identity). It exists only once the site has enrolled: bootstrap/50-grid-hub-info.sh
+# prints it from the site's GridNetwork; commit it here. Until then the provider pins 64 zeros and
+# refuses every caller.
+siteDigests:
+  site-a: "0cbd93eaf3bf393c2293412f42fe0ed2f2f48d75d91408ddeefee9f689507d25"
+# Inference sites that other clusters' consumers call: the Globalnet address of each one's exported
+# provider Service (spokes/grid/provider-export). A literal IP, because the gateways refuse host
+# names. It changes on every build: bootstrap/50-grid-hub-info.sh prints it once the site is added;
+# commit it here. Empty: no site is called from another; a combined site's consumer calls only its own
+# provider, and an ingress spoke can't render a consumer at all (it has no backend), so add an
+# inference site before an ingress one.
+providerGlobalIPs: {}
+#  site-b: "242.x.y.z"
+# The sites whose consumers call those inference sites: every ingress and combined spoke, and
+# local-cluster while the hub is one. Each inference provider pins exactly these sites' digests
+# (verify/05 checks the list against the spokes' roles).
+consumerSites: []
+#  - site-a
+# Remote spokes enroll with the hub's enrollment over Submariner (apps/grid-enrollment).
+enrollHost: local-cluster.grid-enrollment.grid-enrollment.svc.clusterset.local:8443
+# A remote site's gossip Service: LoadBalancer (an NLB, from platform: aws), so remote sites, such as
+# an inference site and the ingress site it serves, gossip with each other. With a single remote site
+# ClusterIP also works and skips the NLB, which holds the operator until AWS gives it an address.
+remoteSwimServiceType: LoadBalancer

@@ -1,0 +1,14 @@
+apiVersion: apps.open-cluster-management.io/v1beta1
+kind: GitOpsCluster
+metadata: { name: ai-grid-spokes, namespace: openshift-gitops }
+spec:
+  argoServer: { cluster: local-cluster, argoNamespace: openshift-gitops }
+  placementRef:
+    apiVersion: cluster.open-cluster-management.io/v1beta1
+    kind: Placement
+    # Every cluster on the cross-cluster network, a superset of ai-grid-spokes: Argo CD must know a
+    # cluster before an ApplicationSet can deliver to it (Submariner's apps, before the Add). Spoke
+    # apps still follow ai-grid-spokes's decisions (_generators.tpl). ACM adds and updates labels on
+    # the cluster Secret but never removes one, so delivery never relies on a label being gone.
+    name: ai-grid-network
+    namespace: openshift-gitops

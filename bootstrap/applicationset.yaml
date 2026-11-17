@@ -1,0 +1,58 @@
+# Root ApplicationSet for the AI Grid OSAC GitOps repository.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apps
+  namespace: openshift-gitops
+spec:
+  # Deleting this ApplicationSet must never cascade into ACM, Argo CD settings, or the database.
+  syncPolicy: { preserveResourcesOnDeletion: true }
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/ganeshmurthy/ai-grid-osac.git
+        revision: main
+        files:
+          - path: apps/*/application.yaml
+  template:
+    metadata:
+      name: '{{.metadata.name}}'
+      namespace: openshift-gitops
+    spec:
+      project: '{{.spec.project}}'
+      source:
+        repoURL: https://github.com/ganeshmurthy/ai-grid-osac.git
+        targetRevision: main
+        path: '{{.path.path}}/manifests'
+      destination:
+        server: '{{.spec.destination.server}}'
+        namespace: '{{.spec.destination.namespace}}'
+  templatePatch: |
+    spec:
+      syncPolicy: {{ .spec.syncPolicy | toJson }}
+      # helmGit and chart are exclusive: an app with both would get source twice
+      # (hack/check-manifests.sh refuses it).
+      {{- if hasKey .spec "helmGit" }}
+      source:
+        helm:
+          parameters:
+            - { name: gitRepo, value: "https://github.com/ganeshmurthy/ai-grid-osac.git" }
+            - { name: gitRef, value: "main" }
+      {{- end }}
+      {{- if hasKey .spec "chart" }}
+      # A chart from another repository (spec.chart: repoURL, targetRevision, path, releaseName), with
+      # values.yaml from the app's directory, plus the app's manifests/ from this repository.
+      source: null
+      sources:
+        - repoURL: {{ .spec.chart.repoURL | quote }}
+          targetRevision: {{ .spec.chart.targetRevision | quote }}
+          path: {{ .spec.chart.path | quote }}
+          helm:
+            releaseName: {{ .spec.chart.releaseName | quote }}
+            valueFiles: ['$env/{{ .path.path }}/values.yaml']
+        - repoURL: https://github.com/ganeshmurthy/ai-grid-osac.git
+          targetRevision: main
+          path: '{{ .path.path }}/manifests'
+          ref: env
+      {{- end }}
