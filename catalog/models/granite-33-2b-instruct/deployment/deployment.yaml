@@ -2,7 +2,6 @@ apiVersion: serving.kserve.io/v1alpha2
 kind: LLMInferenceService
 metadata:
   annotations:
-    ai-grid/clusters: site-b
     ai-grid/version: '1'
     openshift.io/description: hf://ibm-granite/granite-3.3-2b-instruct
     openshift.io/display-name: granite-3.3-2b-instruct

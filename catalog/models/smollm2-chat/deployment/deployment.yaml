@@ -3,7 +3,6 @@ kind: LLMInferenceService
 metadata:
   annotations:
     ai-grid/api: chat
-    ai-grid/clusters: site-b
     ai-grid/model-name: HuggingFaceTB/SmolLM2-135M-Instruct
     ai-grid/version: '1'
     openshift.io/display-name: SmolLM2 135M Instruct
