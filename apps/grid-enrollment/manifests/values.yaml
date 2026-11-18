@@ -11,7 +11,7 @@ grid-enrollment:
   # add the site to AI Grid the same day, or delete Secret grid-invite-<site> here and resync), and
   # the invite Policy delivers it to the site with the CA bundle and gossip key.
   invites:
-    site-a: { network: grid }
+    order-zgbr8: { network: grid }
   invitePolicy: { enabled: true, namespace: grid, clusterSet: default }
   db:
     builtin:

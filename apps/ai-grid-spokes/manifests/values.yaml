@@ -40,4 +40,4 @@ enrollHost: local-cluster.grid-enrollment.grid-enrollment.svc.clusterset.local:8
 # A remote site's gossip Service: LoadBalancer (an NLB, from platform: aws), so remote sites, such as
 # an inference site and the ingress site it serves, gossip with each other. With a single remote site
 # ClusterIP also works and skips the NLB, which holds the operator until AWS gives it an address.
-remoteSwimServiceType: LoadBalancer
+remoteSwimServiceType: ClusterIP
