@@ -2,5 +2,4 @@ models:
 - e2e-cpu
 - e2e-gpu
 - granite-33-2b-instruct
-- opt-test
 - smollm2-chat
